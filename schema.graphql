@@ -1,0 +1,36 @@
+# user type definition
+type User {
+  id: Int,
+  # email as String
+  email: String,
+  # age as Integer
+  age: Int,
+  company: Company
+}
+
+# company type definition
+type Company {
+  id: Int,
+  name: String
+}
+
+# all defined queries
+type Query {
+  # all user as list  
+  users: [User],
+  # user by email
+  user(email: String): User,
+  # current user
+  me: User,
+  company: Company
+}
+
+# all defined mutations
+type Mutation {
+  # create a new user
+  addUser(email: String!, age: Int!, company: String!): User,
+  # update an user
+  updateUser(id: Int!, email: String!, age: Int!, company: String!): User,
+  # delete an user
+  deleteUser(id: Int!): User
+}

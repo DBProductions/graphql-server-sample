@@ -1,0 +1,12 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:5.7
+    volumes:
+    - ./p:/data
+    - ./initdb:/docker-entrypoint-initdb.d
+    ports:
+    - "3306:3306"
+    env_file: .env
+volumes:
+  dbvolume01: {}
