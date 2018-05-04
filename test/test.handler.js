@@ -4,7 +4,15 @@ import Handler from './../handler';
 
 let sandbox;
 let HandlerInstance;
-const connection = { query: () => {} };
+const connection = {
+  query: () => {},
+  QueryTypes: {
+    SELECT: 1,
+    INSERT: 1,
+    UPDATE: 1,
+    DELETE: 1,
+  },
+};
 
 test.before('create handler', () => {
   const results = [
@@ -26,7 +34,7 @@ test.before('create handler', () => {
   HandlerInstance = new Handler(connection, results);
   sandbox = sinon.sandbox.create();
   sandbox.stub(HandlerInstance, 'setCompany').returns(Promise.resolve(4));
-  sandbox.stub(connection, 'query').callsFake((id, callback) => callback(null, { insertId: 5 }, { }));
+  sandbox.stub(connection, 'query').resolves(5);
 });
 
 test.after('restore the sandbox', () => {
@@ -49,6 +57,7 @@ test('addUser', async (t) => {
       name: 'Company C',
     },
   };
+
   t.deepEqual(await HandlerInstance.addUser(args), expectedValue);
 });
 

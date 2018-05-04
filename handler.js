@@ -3,8 +3,8 @@ module.exports = class {
    * Set connection and users
    * @param {Array} users
    */
-  constructor(connection, users) {
-    this.connection = connection;
+  constructor(sequelize, users) {
+    this.sequelize = sequelize;
     this.users = [];
     users.forEach((val) => {
       this.users.push({
@@ -25,22 +25,22 @@ module.exports = class {
   async setCompany(company) {
     return new Promise((resolve, reject) => {
       const companyInDb = `SELECT * FROM companies WHERE name="${company}";`;
-      this.connection.query(companyInDb, (selectError, selectResults) => {
-        if (selectError) {
-          reject(selectError);
-        }
-        if (selectResults.length > 0) {
-          resolve(selectResults[0].id);
-        } else {
-          const addCompanySql = `INSERT INTO companies (name) VALUES("${company}");`;
-          this.connection.query(addCompanySql, (insertError, insertResults) => {
-            if (insertError) {
-              reject(insertError);
-            }
-            resolve(insertResults.insertId);
-          });
-        }
-      });
+      this.sequelize.query(companyInDb, { type: this.sequelize.QueryTypes.SELECT })
+        .then((selectResults) => {
+          if (selectResults.length > 0) {
+            resolve(selectResults[0].id);
+          } else {
+            const addCompanySql = `INSERT INTO companies (name) VALUES("${company}");`;
+            this.sequelize.query(addCompanySql, { type: this.sequelize.QueryTypes.INSERT })
+              .then((insertResults) => {
+                resolve(insertResults);
+              }).catch((err) => {
+                reject(err);
+              });
+          }
+        }).catch((err) => {
+          reject(err);
+        });
     });
   }
   /**
@@ -53,12 +53,9 @@ module.exports = class {
       const { email, age, company } = args;
       this.setCompany(company).then((val) => {
         const sql = `INSERT INTO users (email, age, company) VALUES("${email}", ${age}, ${val});`;
-        this.connection.query(sql, (error, results) => {
-          if (error) {
-            reject(error);
-          }
+        this.sequelize.query(sql, { type: this.sequelize.QueryTypes.INSERT }).then((results) => {
           const newUser = {
-            id: results.insertId,
+            id: results,
             email,
             age,
             company: {
@@ -69,6 +66,8 @@ module.exports = class {
           this.users.push(newUser);
           resolve(newUser);
         });
+      }).catch((err) => {
+        reject(err);
       });
     });
   }
@@ -106,10 +105,7 @@ module.exports = class {
       } = args;
       this.setCompany(company).then((val) => {
         const sql = `UPDATE users SET email="${email}", age=${age}, company="${val}" WHERE id=${id};`;
-        this.connection.query(sql, (error) => {
-          if (error) {
-            reject(error);
-          }
+        this.sequelize.query(sql, { type: this.sequelize.QueryTypes.UPDATE }).then(() => {
           const user = this.getUserById(id);
           if (!user) {
             reject(new Error('user not found'));
@@ -122,6 +118,8 @@ module.exports = class {
             };
             resolve(user);
           }
+        }).catch((err) => {
+          reject(err);
         });
       });
     });
@@ -134,16 +132,15 @@ module.exports = class {
     return new Promise((resolve, reject) => {
       const { id } = args;
       const sql = `DELETE FROM users WHERE id=${id};`;
-      this.connection.query(sql, (error) => {
-        if (error) {
-          reject(error);
-        }
+      this.sequelize.query(sql, { type: this.sequelize.QueryTypes.DELETE }).then(() => {
         const user = this.getUserById(id);
         const index = this.users.findIndex(u => u.id === id);
         if (index > -1) {
           this.users.splice(index, 1);
         }
         resolve(user);
+      }).catch((err) => {
+        reject(err);
       });
     });
   }

@@ -1,20 +1,18 @@
-const mysql = require('mysql');
+const Sequelize = require('sequelize');
 const Handler = require('./handler');
 
 let HandlerInstance = null;
 
-const connection = mysql.createConnection({
+const sequelize = new Sequelize('graphql', 'root', 'root', {
   host: 'localhost',
-  user: 'root',
-  password: 'root',
-  database: 'graphql',
+  dialect: 'mysql',
+  operatorsAliases: false,
+  logging: false,
 });
-connection.connect();
 
 const dataSql = 'SELECT users.*, companies.id AS cid, companies.name AS compname FROM users LEFT JOIN companies ON users.company = companies.id;';
-connection.query(dataSql, (err, results) => {
-  if (err) throw err;
-  HandlerInstance = new Handler(connection, results);
+sequelize.query(dataSql, { type: sequelize.QueryTypes.SELECT }).then((results) => {
+  HandlerInstance = new Handler(sequelize, results);
 });
 
 module.exports = {
