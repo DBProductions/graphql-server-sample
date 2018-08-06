@@ -1,6 +1,6 @@
 import test from 'ava';
 import sinon from 'sinon';
-import Handler from './../handler';
+import Handler from '../handler';
 
 let sandbox;
 let HandlerInstance;
@@ -12,10 +12,54 @@ const connection = {
     UPDATE: 1,
     DELETE: 1,
   },
+  user: {
+    belongsTo: () => {},
+    create: () => new Promise((resolve) => {
+      resolve({
+        id: 5,
+        email: 'test@test.com',
+        age: 30,
+        company: {
+          id: 4,
+          name: 'Company C',
+        },
+      });
+    }),
+    findAll: () => new Promise((resolve) => {
+      resolve([
+        {
+          dataValues: {},
+        },
+      ]);
+    }),
+    findOne: () => new Promise((resolveFindOne) => {
+      resolveFindOne({
+        id: 2,
+        email: 'user2@test.com',
+        age: 28,
+        companyid: 4,
+        destroy: () => {},
+        update: () => new Promise((resolve) => {
+          resolve({
+            id: 2,
+          });
+        }),
+        toJSON: () => ({
+          id: 2,
+          email: 'user2@test.com',
+          age: 28,
+          companyid: 4,
+        }),
+      });
+    }),
+  },
 };
 
 test.before('create handler', () => {
-  const results = [
+  HandlerInstance = new Handler(connection);
+  sandbox = sinon.createSandbox();
+  sandbox.stub(HandlerInstance, 'setCompany').returns(Promise.resolve(4));
+  sandbox.stub(HandlerInstance, 'loadEntries').returns(Promise.resolve(
     {
       id: 1,
       email: 'user1@test.com',
@@ -30,11 +74,25 @@ test.before('create handler', () => {
       cid: 2,
       compname: 'Company B',
     },
-  ];
-  HandlerInstance = new Handler(connection, results);
-  sandbox = sinon.sandbox.create();
-  sandbox.stub(HandlerInstance, 'setCompany').returns(Promise.resolve(4));
-  sandbox.stub(connection, 'query').resolves(5);
+  ));
+  HandlerInstance.users = [{
+    id: 1,
+    email: 'user1@test.com',
+    age: 24,
+    company: {
+      id: 2,
+      name: 'Company B',
+    },
+  },
+  {
+    id: 2,
+    email: 'user2@test.com',
+    age: 28,
+    company: {
+      id: 2,
+      name: 'Company B',
+    },
+  }];
 });
 
 test.after('restore the sandbox', () => {
@@ -61,7 +119,7 @@ test('addUser', async (t) => {
   t.deepEqual(await HandlerInstance.addUser(args), expectedValue);
 });
 
-test('getAllUsers', (t) => {
+test('getAllUsers', async (t) => {
   t.plan(1);
   const expectedValue = [
     {
@@ -69,8 +127,8 @@ test('getAllUsers', (t) => {
       email: 'user1@test.com',
       age: 24,
       company: {
-        id: 1,
-        name: 'Company A',
+        id: 2,
+        name: 'Company B',
       },
     },
     {
@@ -83,10 +141,11 @@ test('getAllUsers', (t) => {
       },
     },
   ];
-  t.deepEqual(HandlerInstance.getAllUsers(), expectedValue);
+  HandlerInstance.users = expectedValue;
+  t.deepEqual(await HandlerInstance.getAllUsers(), expectedValue);
 });
 
-test('getUserByEmail', (t) => {
+test('getUserByEmail', async (t) => {
   t.plan(1);
   const expectedValue = {
     id: 2,
@@ -97,21 +156,21 @@ test('getUserByEmail', (t) => {
       name: 'Company B',
     },
   };
-  t.deepEqual(HandlerInstance.getUserByEmail('user2@test.com'), expectedValue);
+  t.deepEqual(await HandlerInstance.getUserByEmail('user2@test.com'), expectedValue);
 });
 
-test('getUserById', (t) => {
+test('getUserById', async (t) => {
   t.plan(1);
   const expectedValue = {
     id: 1,
     email: 'user1@test.com',
     age: 24,
     company: {
-      id: 1,
-      name: 'Company A',
+      id: 2,
+      name: 'Company B',
     },
   };
-  t.deepEqual(HandlerInstance.getUserById(1), expectedValue);
+  t.deepEqual(await HandlerInstance.getUserById({ uid: 1 }), expectedValue);
 });
 
 test('updateUser', async (t) => {
@@ -124,17 +183,19 @@ test('updateUser', async (t) => {
   };
   const expectedValue = {
     id: 2,
-    email: 'test@test.com',
-    age: 30,
-    company: {
-      id: 4,
-      name: 'Company C',
-    },
+    email: 'user2@test.com',
+    age: 28,
+    companyid: 4,
   };
   t.deepEqual(await HandlerInstance.updateUser(args), expectedValue);
 });
 
 test('deleteUser', async (t) => {
   t.plan(1);
-  t.deepEqual(await HandlerInstance.deleteUser(1), undefined);
+  t.deepEqual(await HandlerInstance.deleteUser(1), {
+    id: 2,
+    email: 'user2@test.com',
+    age: 28,
+    companyid: 4,
+  });
 });

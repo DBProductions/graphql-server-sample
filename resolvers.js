@@ -1,26 +1,14 @@
-const Sequelize = require('sequelize');
+const db = require('./models');
 const Handler = require('./handler');
 
-let HandlerInstance = null;
-
-const sequelize = new Sequelize('graphql', 'root', 'root', {
-  host: 'localhost',
-  dialect: 'mysql',
-  operatorsAliases: false,
-  logging: false,
-});
-
-const dataSql = 'SELECT users.*, companies.id AS cid, companies.name AS compname FROM users LEFT JOIN companies ON users.company = companies.id;';
-sequelize.query(dataSql, { type: sequelize.QueryTypes.SELECT }).then((results) => {
-  HandlerInstance = new Handler(sequelize, results);
-});
+const HandlerInstance = new Handler(db);
 
 module.exports = {
   Query: {
     users: () => HandlerInstance.getAllUsers(),
     user: (root, { email }) => HandlerInstance.getUserByEmail(email),
-    me: (root, args, ctx) => HandlerInstance.getUserById(ctx.req.tokenId),
-    company: () => {},
+    me: (root, args, ctx) => HandlerInstance.getUserById(ctx),
+    companies: () => HandlerInstance.getAllCompanies(),
   },
   Mutation: {
     addUser: (root, args) => HandlerInstance.addUser(args),

@@ -22,7 +22,8 @@ type Query {
   user(email: String): User,
   # current user
   me: User,
-  company: Company
+  # all companies
+  companies: [Company]
 }
 
 # all defined mutations

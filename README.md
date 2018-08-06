@@ -1,19 +1,38 @@
 # graphql-server-sample
 A simple server which serves user data and allows basic operations.  
-The idea behind, having a relational database model served as GraphQL.  
+The idea behind, having a relational database model served as GraphQL.
 
-## Database
-Use Docker Compose to run a MySQL database with some data.  
-The SQL files inside of the `initdb` folder will be executed while startup.  
-
-    docker-compose up
-
-## Install and run it
+## Install dependencies
 
     $ node -v
     v9.5.0
     $ npm i
-    ...
+
+## Database
+Use Docker Compose to run a PostgreSQL database.  
+
+    docker-compose up
+
+The server is using `sequelizejs` as ORM.  
+
+### Migrate
+
+    $ node_modules/.bin/sequelize db:migrate
+
+When something went wrong you can undo all your actions.
+
+    $ node_modules/.bin/sequelize db:migrate:undo:all
+
+### Running seeds
+
+    $ node_modules/.bin/sequelize db:seed:all
+
+Cleaning the database to play with data.  
+
+    $ node_modules/.bin/sequelize db:seed:undo:all
+
+## Run it
+
     $ npm start
 
 ## Token
@@ -49,6 +68,12 @@ Some basic operations.
     query {
         user(email:"user1@graphql.com") {
             id, email, age
+        }
+    }
+
+    query {
+        companies {
+            id, name
         }
     }
 

@@ -1,59 +1,58 @@
-const PORT = 3000;
-const restify = require('restify');
+const config = require('config');
+const fastify = require('fastify');
 const jwt = require('jsonwebtoken');
-const { graphqlRestify, graphiqlRestify } = require('graphql-server-restify');
+const { graphiqlFastify, graphqlFastify } = require('fastify-graphql');
 const { schema } = require('./schema');
 
-const tokenSecret = '1234567890';
+const app = fastify({ logger: { level: 'info' } });
 
-const server = restify.createServer({
-  name: 'graphqlapi',
-  version: '1.0.0',
-});
-
-server.use(restify.plugins.queryParser({ mapParams: true }));
-server.use(restify.plugins.bodyParser({ mapParams: true }));
-
-const graphQLOptions = {
-  schema,
-  debug: true,
-};
-
-server.use((req, res, next) => {
-  let token = null;
-  if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
-    [, token] = req.headers.authorization.split(' ');
-  } else if (req.query && req.query.token) {
-    ({ token } = req.query);
+app.addHook('preHandler', (request, reply, next) => {
+  let token;
+  let response;
+  if (request.raw.url === ('/service-worker.js' || '/favicon.ico')) {
+    return reply.code(404).send({});
   }
-  jwt.verify(token, tokenSecret, (err, decoded) => {
-    if (err) {
-      res.status(401);
-      return res.send({
-        message: 'Failed to authenticate token',
-      });
-    }
-    if (!decoded.id) {
-      res.status(401);
-      return res.send({
+  if (request.headers.authorization && request.headers.authorization.split(' ')[0] === 'Bearer') {
+    [, token] = request.headers.authorization.split(' ');
+  } else if (request.query && request.query.token) {
+    ({ token } = request.query);
+  }
+  try {
+    const decoded = jwt.verify(token, config.get('tokenSecret'));
+    if (decoded.id) {
+      app.uid = decoded.id;
+      request.log.info(`User ${app.uid} is requesting`);
+      response = next();
+    } else {
+      response = reply.code(401).send({
         message: 'Token payload is wrong',
       });
     }
-    req.tokenId = decoded.id;
-    return next();
-  });
+  } catch (err) {
+    response = reply.code(401).send({
+      message: 'Failed to authenticate token',
+    });
+  }
+  return response;
 });
 
-server.post('/graphql', graphqlRestify((req) => {
-  graphQLOptions.context = { req };
-  return graphQLOptions;
-}));
+app.register(graphqlFastify, {
+  prefix: '/graphql',
+  graphql: {
+    schema,
+    context: app,
+  },
+});
 
-server.get('/graphql', graphqlRestify((req) => {
-  graphQLOptions.context = { req };
-  return graphQLOptions;
-}));
+app.register(graphiqlFastify, {
+  prefix: '/graphiql',
+  graphiql: {
+    endpointURL: '/graphql',
+  },
+});
 
-server.get('/graphiql', graphiqlRestify({ endpointURL: '/graphql' }));
-
-server.listen(PORT, () => {});
+app.listen(config.get('service.port'), (err) => {
+  if (err) {
+    app.log.error(err);
+  }
+});

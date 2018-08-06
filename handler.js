@@ -1,48 +1,72 @@
 module.exports = class {
   /**
-   * Set connection and users
-   * @param {Array} users
+   * Set connection and load entries
+   * @param {Object} db
    */
-  constructor(sequelize, users) {
-    this.sequelize = sequelize;
+  constructor(db) {
+    this.db = db;
+    this.db.user.belongsTo(this.db.companies, { foreignKey: 'companyid', targetKey: 'id' });
+
     this.users = [];
-    users.forEach((val) => {
-      this.users.push({
-        id: val.id,
-        email: val.email,
-        age: val.age,
-        company: {
-          id: val.cid,
-          name: val.compname,
-        },
+    this.loadEntries().then(() => {});
+  }
+
+  /**
+   * Load entries user combined with companies.
+   */
+  loadEntries() {
+    return new Promise((resolve, reject) => {
+      this.users = [];
+      this.db.user.findAll({
+        include: [
+          {
+            model: this.db.companies,
+            attributes: [['id', 'cid'], 'name'],
+            required: false, // force a left join, true force inner join
+          },
+        ],
+      }).then((results) => {
+        let user;
+        results.forEach((val) => {
+          user = {
+            id: val.dataValues.id,
+            email: val.dataValues.email,
+            age: val.dataValues.age,
+            company: {
+              id: undefined,
+              name: undefined,
+            },
+          };
+          if (val.dataValues.company) {
+            user.company.id = val.dataValues.company.dataValues.cid;
+            user.company.name = val.dataValues.company.dataValues.name;
+          }
+          this.users.push(user);
+        });
+        resolve();
+      }).catch((err) => {
+        reject(err);
       });
     });
   }
+
   /**
    * set company for user
    * @param {String} company
    */
   async setCompany(company) {
     return new Promise((resolve, reject) => {
-      const companyInDb = `SELECT * FROM companies WHERE name="${company}";`;
-      this.sequelize.query(companyInDb, { type: this.sequelize.QueryTypes.SELECT })
-        .then((selectResults) => {
-          if (selectResults.length > 0) {
-            resolve(selectResults[0].id);
-          } else {
-            const addCompanySql = `INSERT INTO companies (name) VALUES("${company}");`;
-            this.sequelize.query(addCompanySql, { type: this.sequelize.QueryTypes.INSERT })
-              .then((insertResults) => {
-                resolve(insertResults);
-              }).catch((err) => {
-                reject(err);
-              });
-          }
-        }).catch((err) => {
+      this.db.companies.findOrCreate({ where: { name: company } })
+        .spread((result) => {
+          const entry = result.get();
+          resolve(entry.id);
+        })
+        .catch((err) => {
           reject(err);
         });
     });
   }
+
   /**
    * add a new user
    * @param {String} email
@@ -52,45 +76,70 @@ module.exports = class {
     return new Promise((resolve, reject) => {
       const { email, age, company } = args;
       this.setCompany(company).then((val) => {
-        const sql = `INSERT INTO users (email, age, company) VALUES("${email}", ${age}, ${val});`;
-        this.sequelize.query(sql, { type: this.sequelize.QueryTypes.INSERT }).then((results) => {
-          const newUser = {
-            id: results,
-            email,
-            age,
-            company: {
-              id: val,
-              name: company,
-            },
-          };
-          this.users.push(newUser);
-          resolve(newUser);
+        this.db.user.create({
+          email,
+          age,
+          companyid: val,
+          created_at: new Date(),
+          updated_at: new Date(),
+        }).then((user) => {
+          this.loadEntries().then(() => {
+            resolve(user);
+          });
+        }).catch((err) => {
+          reject(err);
         });
       }).catch((err) => {
         reject(err);
       });
     });
   }
+
   /**
    * get all users
    */
-  getAllUsers() {
+  async getAllUsers() {
     return this.users;
   }
+
   /**
    * get an user by email
    * @param {String} email
    */
-  getUserByEmail(email) {
+  async getUserByEmail(email) {
     return this.users.find(user => user.email === email);
   }
+
   /**
    * get an user by id
    * @param {Int} id
    */
-  getUserById(id) {
-    return this.users.find(user => user.id === Number(id));
+  async getUserById(u) {
+    return this.users.find(item => item.id === Number(u.uid));
   }
+
+  /**
+   * get all companies
+   */
+  async getAllCompanies() {
+    return new Promise((resolve, reject) => {
+      const companies = [];
+      this.db.companies.findAll({}).then((results) => {
+        let company;
+        results.forEach((val) => {
+          company = {
+            id: parseInt(val.dataValues.id, 10),
+            name: val.dataValues.name,
+          };
+          companies.push(company);
+        });
+        resolve(companies);
+      }).catch((err) => {
+        reject(err);
+      });
+    });
+  }
+
   /**
    * update an user
    * @param {Object} args
@@ -104,19 +153,21 @@ module.exports = class {
         company,
       } = args;
       this.setCompany(company).then((val) => {
-        const sql = `UPDATE users SET email="${email}", age=${age}, company="${val}" WHERE id=${id};`;
-        this.sequelize.query(sql, { type: this.sequelize.QueryTypes.UPDATE }).then(() => {
-          const user = this.getUserById(id);
-          if (!user) {
-            reject(new Error('user not found'));
+        this.db.user.findOne({ where: { id } }).then((user) => {
+          if (user) {
+            user.update({
+              email,
+              age,
+              companyid: val,
+            }).then(() => {
+              this.loadEntries().then(() => {
+                resolve(user.toJSON());
+              });
+            }).catch((err) => {
+              reject(err);
+            });
           } else {
-            user.email = email;
-            user.age = age;
-            user.company = {
-              id: val,
-              name: company,
-            };
-            resolve(user);
+            reject('user not found');
           }
         }).catch((err) => {
           reject(err);
@@ -124,6 +175,7 @@ module.exports = class {
       });
     });
   }
+
   /**
    * delete an user
    * @param {Int} id
@@ -131,14 +183,15 @@ module.exports = class {
   async deleteUser(args) {
     return new Promise((resolve, reject) => {
       const { id } = args;
-      const sql = `DELETE FROM users WHERE id=${id};`;
-      this.sequelize.query(sql, { type: this.sequelize.QueryTypes.DELETE }).then(() => {
-        const user = this.getUserById(id);
-        const index = this.users.findIndex(u => u.id === id);
-        if (index > -1) {
-          this.users.splice(index, 1);
+      this.db.user.findOne({ where: { id } }).then((user) => {
+        let response = null;
+        if (user) {
+          user.destroy();
+          response = user.toJSON();
         }
-        resolve(user);
+        this.loadEntries().then(() => {
+          resolve(response);
+        });
       }).catch((err) => {
         reject(err);
       });
