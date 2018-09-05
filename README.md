@@ -4,8 +4,6 @@ The idea behind, having a relational database model served as GraphQL.
 
 ## Install dependencies
 
-    $ node -v
-    v9.5.0
     $ npm i
 
 ## Database

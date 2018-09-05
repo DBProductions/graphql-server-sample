@@ -1,6 +1,6 @@
 import test from 'ava';
 import sinon from 'sinon';
-import Handler from '../handler';
+import Handler from '../src/handler';
 
 let sandbox;
 let HandlerInstance;

@@ -2,9 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const Sequelize = require('sequelize');
 
-const env = process.env.NODE_ENV || 'development';
+const env = process.env.NODE_ENV || 'develop';
 // eslint-disable-next-line import/no-dynamic-require
-const config = require(`${__dirname}/../config/config.json`)[env];
+const config = require(`${process.cwd()}/config/config.js`)[env];
 
 const basename = path.basename(__filename);
 const db = {};

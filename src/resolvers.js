@@ -1,4 +1,4 @@
-const db = require('./models');
+const db = require('../models');
 const Handler = require('./handler');
 
 const HandlerInstance = new Handler(db);

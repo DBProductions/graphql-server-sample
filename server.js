@@ -2,7 +2,8 @@ const config = require('config');
 const fastify = require('fastify');
 const jwt = require('jsonwebtoken');
 const { graphiqlFastify, graphqlFastify } = require('fastify-graphql');
-const { schema } = require('./schema');
+// eslint-disable-next-line import/no-dynamic-require
+const { schema } = require(`${process.cwd()}/src/schema`);
 
 const app = fastify({ logger: { level: 'info' } });
 

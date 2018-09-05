@@ -167,7 +167,7 @@ module.exports = class {
               reject(err);
             });
           } else {
-            reject('user not found');
+            reject(new Error('user not found'));
           }
         }).catch((err) => {
           reject(err);
