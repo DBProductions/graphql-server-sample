@@ -15,6 +15,7 @@ The server is using `sequelizejs` as ORM.
 
 ### Migrate
 
+    $ export NODE_ENV=develop
     $ node_modules/.bin/sequelize db:migrate
 
 When something went wrong you can undo all your actions.
@@ -37,6 +38,18 @@ Cleaning the database to play with data.
 All requests need a token as header or query param.
 
     token for user with id 2: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjIiLCJpYXQiOjE1MTgzODM2MDZ9.I9GbV7a-4VUE8Bbcl8JBz0b4mtiPMJTLpQtzUvT_iOk
+
+## GraphQL
+Use a browser to send a query as GET request.
+
+    http://localhost:3000/graphql?token=<token>&query={users{email}}
+
+Use `curl` to send a query as POST request.  
+
+    curl -X POST \
+    -H "Content-Type: application/json" \
+    --data '{ "query": "{ users { email } }" }' \
+    http://localhost:3000/graphql?token=<token>
 
 ## GraphiQL
 Is a graphical interactive in-browser GraphQL IDE. 

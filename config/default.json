@@ -2,13 +2,5 @@
     "tokenSecret": "1234567890",
     "service": {
         "port": 3000
-    },
-    "db": {
-        "host": "localhost",
-        "name": "graphql",
-        "user": "postgres",
-        "pass": "postgres",
-        "dialect": "postgres",
-        "logging": false
     }
 }

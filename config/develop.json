@@ -1,0 +1,10 @@
+{
+    "db": {
+        "host": "localhost",
+        "name": "graphql",
+        "user": "postgres",
+        "pass": "postgres",
+        "dialect": "postgres",
+        "logging": false
+    }
+}

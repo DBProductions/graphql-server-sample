@@ -15,26 +15,26 @@
   "author": "DBProductions",
   "license": "ISC",
   "dependencies": {
-    "config": "^2.0.1",
-    "fastify": "^1.9.0",
-    "fastify-graphql": "^4.0.0",
-    "fastify-plugin": "^1.2.0",
-    "graphql": "^0.13.2",
-    "graphql-tools": "^3.1.1",
-    "jsonwebtoken": "^8.3.0",
-    "mysql2": "^1.6.1",
-    "pg": "^7.4.3",
-    "sequelize": "^4.38.0",
-    "sequelize-cli": "^4.0.0"
+    "config": "^3.0.1",
+    "fastify": "^1.13.4",
+    "fastify-graphql": "^4.0.1",
+    "fastify-plugin": "^1.4.0",
+    "graphql": "^14.1.1",
+    "graphql-tools": "^4.0.3",
+    "jsonwebtoken": "^8.4.0",
+    "mysql2": "^1.6.4",
+    "pg": "^7.8.0",
+    "sequelize": "^4.42.0",
+    "sequelize-cli": "^5.4.0"
   },
   "devDependencies": {
-    "ava": "0.25.0",
-    "eslint": "^5.3.0",
+    "ava": "^1.1.0",
+    "eslint": "^5.12.1",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-plugin-import": "^2.14.0",
-    "eslint-plugin-jsx-a11y": "^6.1.1",
-    "eslint-plugin-react": "^7.11.1",
-    "nyc": "^12.0.2",
-    "sinon": "^6.1.5"
+    "eslint-plugin-jsx-a11y": "^6.1.2",
+    "eslint-plugin-react": "^7.12.4",
+    "nyc": "^13.1.0",
+    "sinon": "^7.2.3"
   }
 }
