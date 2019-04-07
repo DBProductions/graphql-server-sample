@@ -1,3 +1,7 @@
+const Sequelize = require('sequelize');
+
+const { Op } = Sequelize;
+
 module.exports = {
   develop: {
     username: 'postgres',
@@ -5,7 +9,7 @@ module.exports = {
     database: 'graphql',
     host: '127.0.0.1',
     dialect: 'postgres',
-    operatorsAliases: false,
+    operatorsAliases: Op,
     logging: false,
   },
   test: {
@@ -14,7 +18,7 @@ module.exports = {
     database: 'graphql',
     host: '127.0.0.1',
     dialect: 'postgres',
-    operatorsAliases: false,
+    operatorsAliases: Op,
     logging: false,
   },
   production: {
@@ -23,7 +27,7 @@ module.exports = {
     database: process.env.PROD_DB_NAME,
     host: process.env.PROD_DB_HOSTNAME,
     dialect: 'postgres',
-    operatorsAliases: false,
+    operatorsAliases: Op,
     logging: false,
   },
 };
